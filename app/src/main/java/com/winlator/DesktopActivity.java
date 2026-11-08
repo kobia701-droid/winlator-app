@@ -147,7 +147,7 @@ public class DesktopActivity extends Activity {
         Container selected = containers.get(0);
         Intent intent = new Intent(this, MainActivity.class);
         intent.putExtra("container_id", selected.id);
-        intent.putExtra("start_path", "D:\\\\");
+        intent.putExtra("start_path", "D:\\");
         startActivity(intent);
     }
 
