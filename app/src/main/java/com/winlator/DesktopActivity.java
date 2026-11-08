@@ -19,6 +19,8 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.TextClock;
+import com.winlator.container.Container;
+import com.winlator.container.ContainerManager;
 
 /** Windows 7-inspired touch desktop. Windows applications run through Winlator/Wine. */
 public class DesktopActivity extends Activity {
@@ -134,6 +136,32 @@ public class DesktopActivity extends Activity {
         item.setOnClickListener(v -> action.run());
     }
 
+    private void openFileManager() {
+        ContainerManager manager = new ContainerManager(this);
+        java.util.ArrayList<Container> containers = manager.getContainers();
+        if (containers.isEmpty()) {
+            Toast.makeText(this, "Create a Windows container first", Toast.LENGTH_LONG).show();
+            openWinlator(R.id.menu_item_containers);
+            return;
+        }
+        Container selected = containers.get(0);
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra("container_id", selected.id);
+        intent.putExtra("start_path", "D:\\\\");
+        startActivity(intent);
+    }
+
+    private void openInstallerFolder() {
+        ContainerManager manager = new ContainerManager(this);
+        if (manager.getContainers().isEmpty()) {
+            Toast.makeText(this, "Create a Windows container first", Toast.LENGTH_LONG).show();
+            openWinlator(R.id.menu_item_containers);
+            return;
+        }
+        Toast.makeText(this, "Place your EXE or MSI file in Android Downloads. It is available as drive D: in the Windows File Manager.", Toast.LENGTH_LONG).show();
+        openFileManager();
+    }
+
     private void showStartMenu(View anchor) {
         LinearLayout menu = new LinearLayout(this);
         menu.setOrientation(LinearLayout.VERTICAL);
@@ -146,6 +174,8 @@ public class DesktopActivity extends Activity {
         menu.addView(heading, new LinearLayout.LayoutParams(-1, dp(46)));
         addMenuItem(menu, "Computer", "Manage Windows containers", () -> openWinlator(R.id.menu_item_containers));
         addMenuItem(menu, "Programs", "Installed Windows shortcuts", () -> openWinlator(R.id.menu_item_shortcuts));
+        addMenuItem(menu, "File Manager", "Browse Windows drives and Downloads", this::openFileManager);
+        addMenuItem(menu, "Install / Run EXE or MSI", "Open the Downloads folder", this::openInstallerFolder);
         addMenuItem(menu, "Control Panel", "Winlator settings", () -> openWinlator(R.id.menu_item_settings));
         addMenuItem(menu, "Windows Apps", "Open your containers", () -> openWinlator(R.id.menu_item_containers));
         View line = new View(this);
