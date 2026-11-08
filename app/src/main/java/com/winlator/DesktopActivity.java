@@ -22,6 +22,7 @@ import android.widget.Toast;
 import android.widget.TextClock;
 import com.winlator.container.Container;
 import com.winlator.container.ContainerManager;
+import com.winlator.xenvironment.RootFS;
 
 /** Windows 7-inspired touch desktop. Windows applications run through Winlator/Wine. */
 public class DesktopActivity extends Activity {
@@ -75,7 +76,7 @@ public class DesktopActivity extends Activity {
         desktop.setPadding(dp(10), dp(10), dp(8), dp(8));
         layer.addView(desktop, new LinearLayout.LayoutParams(-1, 0, 1));
 
-        addDesktopIcon(desktop, R.drawable.w7_icon_computer, "Computer", () -> openWinlator(R.id.menu_item_containers));
+        addDesktopIcon(desktop, R.drawable.w7_icon_computer, "Computer", this::openFileManager);
         addDesktopIcon(desktop, R.drawable.w7_icon_network, "Network", () -> openWinlator(R.id.menu_item_settings));
         addDesktopIcon(desktop, R.drawable.w7_icon_folder, "Programs", () -> openWinlator(R.id.menu_item_shortcuts));
         addDesktopIcon(desktop, R.drawable.w7_icon_recycle, "Recycle Bin", () ->
@@ -139,6 +140,10 @@ public class DesktopActivity extends Activity {
     }
 
     private void openFileManager() {
+        if (!RootFS.find(this).isValid()) {
+            openWinlator(R.id.menu_item_containers);
+            return;
+        }
         ContainerManager manager = new ContainerManager(this);
         java.util.ArrayList<Container> containers = manager.getContainers();
         if (containers.isEmpty()) {
