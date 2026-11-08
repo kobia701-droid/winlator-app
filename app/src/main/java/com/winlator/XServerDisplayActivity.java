@@ -968,7 +968,11 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         }
         else {
             Intent intent = getIntent();
-            if (intent.hasExtra("exec_path")) {
+            if (intent.hasExtra("install_msi_path")) {
+                String msiPath = WineUtils.unixToDOSPath(intent.getStringExtra("install_msi_path"), container);
+                cmdArgs = "/dir C:\\windows \"msiexec.exe\" /i \""+msiPath+"\"";
+            }
+            else if (intent.hasExtra("exec_path")) {
                 execPath = WineUtils.unixToDOSPath(intent.getStringExtra("exec_path"), container);
 
                 if (execPath.endsWith(".lnk")) {
