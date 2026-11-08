@@ -28,10 +28,15 @@ import android.widget.Toast;
 import android.widget.TextClock;
 import com.winlator.container.Container;
 import com.winlator.container.ContainerManager;
+import com.winlator.container.Shortcut;
+import java.util.HashSet;
+import java.util.Set;
 import com.winlator.xenvironment.RootFS;
 
 /** Windows 7-inspired touch desktop. Windows applications run through Winlator/Wine. */
 public class DesktopActivity extends Activity {
+    private LinearLayout desktopArea;
+    private final Set<String> desktopShortcutPaths = new HashSet<>();
     private int dp(float v) { return (int)(v * getResources().getDisplayMetrics().density + 0.5f); }
 
     private GradientDrawable shape(int color, int stroke, int radius) {
@@ -77,6 +82,7 @@ public class DesktopActivity extends Activity {
         root.addView(layer, layerParams);
 
         LinearLayout desktop = new LinearLayout(this);
+        desktopArea = desktop;
         desktop.setOrientation(LinearLayout.VERTICAL);
         desktop.setGravity(Gravity.TOP | Gravity.START);
         desktop.setPadding(dp(10), dp(10), dp(8), dp(8));
@@ -125,6 +131,44 @@ public class DesktopActivity extends Activity {
         taskbar.addView(clock, new LinearLayout.LayoutParams(dp(62), -1));
 
         setContentView(root);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (desktopArea != null) addExistingWindowsShortcuts();
+    }
+
+    private void addExistingWindowsShortcuts() {
+        if (!RootFS.find(this).isValid()) return;
+        try {
+            ContainerManager manager = new ContainerManager(this);
+            int added = 0;
+            for (Shortcut shortcut : manager.loadShortcuts(null)) {
+                if (shortcut.file.isDirectory() || !desktopShortcutPaths.add(shortcut.file.getAbsolutePath())) continue;
+                ImageView icon = new ImageView(this);
+                if (shortcut.icon != null) icon.setImageBitmap(shortcut.icon);
+                else icon.setImageResource(R.drawable.w7_icon_folder);
+                icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                LinearLayout item = new LinearLayout(this);
+                item.setOrientation(LinearLayout.VERTICAL);
+                item.setGravity(Gravity.CENTER);
+                item.setPadding(dp(2), dp(2), dp(2), dp(2));
+                item.addView(icon, new LinearLayout.LayoutParams(dp(58), dp(54)));
+                TextView name = label(shortcut.name, 12, Color.WHITE, false);
+                name.setShadowLayer(3, 1, 1, Color.BLACK);
+                item.addView(name, new LinearLayout.LayoutParams(dp(94), dp(24)));
+                desktopArea.addView(item, new LinearLayout.LayoutParams(dp(100), dp(82)));
+                item.setOnClickListener(v -> {
+                    Intent run = new Intent(this, XServerDisplayActivity.class);
+                    run.putExtra("container_id", shortcut.container.id);
+                    run.putExtra("shortcut_path", shortcut.file.getAbsolutePath());
+                    startActivity(run);
+                });
+                if (++added >= 8) break;
+            }
+        }
+        catch (Exception ignored) {}
     }
 
     private void addDesktopIcon(LinearLayout parent, int iconResource, String caption, Runnable action) {
