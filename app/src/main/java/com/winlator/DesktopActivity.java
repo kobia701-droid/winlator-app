@@ -2,6 +2,12 @@ package com.winlator;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
+import android.provider.OpenableColumns;
+import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -158,15 +164,65 @@ public class DesktopActivity extends Activity {
         startActivity(intent);
     }
 
-    private void openInstallerFolder() {
+    private void chooseInstaller() {
+        if (!RootFS.find(this).isValid()) {
+            openWinlator(R.id.menu_item_containers);
+            return;
+        }
         ContainerManager manager = new ContainerManager(this);
         if (manager.getContainers().isEmpty()) {
             Toast.makeText(this, "Create a Windows container first", Toast.LENGTH_LONG).show();
             openWinlator(R.id.menu_item_containers);
             return;
         }
-        Toast.makeText(this, "Place your EXE or MSI file in Android Downloads. It is available as drive D: in the Windows File Manager.", Toast.LENGTH_LONG).show();
-        openFileManager();
+        Intent picker = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        picker.addCategory(Intent.CATEGORY_OPENABLE);
+        picker.setType("*/*");
+        startActivityForResult(picker, 701);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != 701 || resultCode != RESULT_OK || data == null || data.getData() == null) return;
+        Uri uri = data.getData();
+        try {
+            String displayName = "WindowsInstaller.exe";
+            try (Cursor cursor = getContentResolver().query(uri, null, null, null, null)) {
+                if (cursor != null && cursor.moveToFirst()) {
+                    int index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                    if (index >= 0) displayName = cursor.getString(index);
+                }
+            }
+            displayName = new File(displayName).getName().replaceAll("[^A-Za-z0-9._ -]", "_");
+            String lower = displayName.toLowerCase(java.util.Locale.ROOT);
+            if (!lower.endsWith(".exe") && !lower.endsWith(".msi")) {
+                Toast.makeText(this, "Please select an .EXE or .MSI installer", Toast.LENGTH_LONG).show();
+                return;
+            }
+            File downloads = new File(com.winlator.core.AppUtils.DIRECTORY_DOWNLOADS);
+            if (!downloads.exists() && !downloads.mkdirs()) throw new java.io.IOException("Cannot create Downloads folder");
+            File target = new File(downloads, displayName);
+            if (target.exists()) target = new File(downloads, System.currentTimeMillis()+"_"+displayName);
+            try (InputStream in = getContentResolver().openInputStream(uri);
+                 OutputStream out = new java.io.FileOutputStream(target)) {
+                if (in == null) throw new java.io.IOException("Cannot read selected file");
+                byte[] buffer = new byte[32768];
+                int count;
+                while ((count = in.read(buffer)) != -1) out.write(buffer, 0, count);
+            }
+            ContainerManager manager = new ContainerManager(this);
+            if (manager.getContainers().isEmpty()) throw new java.io.IOException("Create a Windows container first");
+            Container container = manager.getContainers().get(0);
+            Intent run = new Intent(this, XServerDisplayActivity.class);
+            run.putExtra("container_id", container.id);
+            if (lower.endsWith(".msi")) run.putExtra("install_msi_path", target.getAbsolutePath());
+            else run.putExtra("exec_path", target.getAbsolutePath());
+            startActivity(run);
+        }
+        catch (Exception e) {
+            Toast.makeText(this, "Installer could not be opened: "+e.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 
     private void showStartMenu(View anchor) {
@@ -182,7 +238,7 @@ public class DesktopActivity extends Activity {
         addMenuItem(menu, "Computer", "Manage Windows containers", () -> openWinlator(R.id.menu_item_containers));
         addMenuItem(menu, "Programs", "Installed Windows shortcuts", () -> openWinlator(R.id.menu_item_shortcuts));
         addMenuItem(menu, "File Manager", "Browse Windows drives and Downloads", this::openFileManager);
-        addMenuItem(menu, "Install / Run EXE or MSI", "Open the Downloads folder", this::openInstallerFolder);
+        addMenuItem(menu, "Install / Run EXE or MSI", "Choose an installer from your phone", this::chooseInstaller);
         addMenuItem(menu, "Control Panel", "Winlator settings", () -> openWinlator(R.id.menu_item_settings));
         addMenuItem(menu, "Windows Apps", "Open your containers", () -> openWinlator(R.id.menu_item_containers));
         View line = new View(this);
