@@ -15,6 +15,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.ImageView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -74,10 +75,10 @@ public class DesktopActivity extends Activity {
         desktop.setPadding(dp(10), dp(10), dp(8), dp(8));
         layer.addView(desktop, new LinearLayout.LayoutParams(-1, 0, 1));
 
-        addDesktopIcon(desktop, "▣", "Computer", 0xffd9f1ff, () -> openWinlator(R.id.menu_item_containers));
-        addDesktopIcon(desktop, "▤", "Network", 0xffd9f1ff, () -> openWinlator(R.id.menu_item_settings));
-        addDesktopIcon(desktop, "▧", "Programs", 0xffffe8a6, () -> openWinlator(R.id.menu_item_shortcuts));
-        addDesktopIcon(desktop, "♲", "Recycle Bin", 0xffe8f5ff, () ->
+        addDesktopIcon(desktop, R.drawable.w7_icon_computer, "Computer", () -> openWinlator(R.id.menu_item_containers));
+        addDesktopIcon(desktop, R.drawable.w7_icon_network, "Network", () -> openWinlator(R.id.menu_item_settings));
+        addDesktopIcon(desktop, R.drawable.w7_icon_folder, "Programs", () -> openWinlator(R.id.menu_item_shortcuts));
+        addDesktopIcon(desktop, R.drawable.w7_icon_recycle, "Recycle Bin", () ->
             Toast.makeText(this, "Recycle Bin", Toast.LENGTH_SHORT).show());
 
         LinearLayout taskbar = new LinearLayout(this);
@@ -119,14 +120,15 @@ public class DesktopActivity extends Activity {
         setContentView(root);
     }
 
-    private void addDesktopIcon(LinearLayout parent, String glyph, String caption, int tint, Runnable action) {
+    private void addDesktopIcon(LinearLayout parent, int iconResource, String caption, Runnable action) {
         LinearLayout item = new LinearLayout(this);
         item.setOrientation(LinearLayout.VERTICAL);
         item.setGravity(Gravity.CENTER);
         item.setPadding(dp(2), dp(2), dp(2), dp(2));
-        TextView icon = label(glyph, 34, tint, true);
-        icon.setBackground(shape(0x332b8dc5, 0x557bd5ff, 9));
-        item.addView(icon, new LinearLayout.LayoutParams(dp(58), dp(52)));
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(iconResource);
+        icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        item.addView(icon, new LinearLayout.LayoutParams(dp(58), dp(54)));
         TextView name = label(caption, 12, Color.WHITE, false);
         name.setShadowLayer(3, 1, 1, Color.BLACK);
         item.addView(name, new LinearLayout.LayoutParams(dp(94), dp(24)));
