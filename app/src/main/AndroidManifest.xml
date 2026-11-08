@@ -22,18 +22,23 @@
         android:isGame="true"
         android:extractNativeLibs="true"
         android:allowAudioPlaybackCapture="true"
-        android:label="@string/app_name">
+        android:label="Windows 7 Mobile">
 
-        <activity android:name="com.winlator.MainActivity"
-            android:theme="@style/AppThemeDark"
+        <activity android:name="com.winlator.DesktopActivity"
             android:exported="true"
             android:screenOrientation="sensor"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|density|navigation">
+            android:theme="@android:style/Theme.Material.Light.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+        <activity android:name="com.winlator.MainActivity"
+            android:theme="@style/AppThemeDark"
+            android:exported="false"
+            android:screenOrientation="sensor"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|density|navigation" />
 
         <activity android:name="com.winlator.XServerDisplayActivity"
             android:exported="false"
@@ -53,7 +58,6 @@
             android:exported="false"
             android:screenOrientation="sensor" />
 
-        <!-- Needed for keep the container alive when in background or the device is locked. -->
         <service
             android:name="com.winlator.services.ForegroundService"
             android:enabled="true"
@@ -67,7 +71,6 @@
             android:authorities="com.winlator.FileProvider"
             android:exported="false"
             android:grantUriPermissions="true">
-
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"/>
